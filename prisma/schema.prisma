@@ -1,0 +1,25 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../db/db.sqlite"
+}
+
+model SMSTask {
+  id              Int     @id @default(autoincrement())
+  eventNum        String
+  eventMsg        String
+  eventTime       String
+  eventTargets    String
+  eventType       Int  @default(1) // 0: 发送失败 1: 一般发送成功
+  status          Int  @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now())
+
+  @@map("sms_tasks")
+}

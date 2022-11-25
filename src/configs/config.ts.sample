@@ -1,0 +1,31 @@
+import { Config } from './config.interface';
+
+import fs from 'fs';
+import { join } from 'path';
+
+const version = JSON.parse(
+  fs.readFileSync(join(__dirname, '..', '..', 'package.json')).toString(),
+).version;
+
+const config: Config = {
+  nest: {
+    port: 3001,
+  },
+  ver: version,
+  aliyun: {
+    accessKeyId: 'zahuiser',
+    accessKeySecret: 'zahuiser',
+    endpoint: 'zahuiser',
+  },
+  vaisala: {
+    host: 'qiuxing',
+    username: 'qiuxing',
+    password: 'qiuxing',
+  },
+  crontab: {
+    fetchEvent: '01 * * * * *',
+    sendMsg: '30 * * * * *',
+  },
+};
+
+export default (): Config => config;
