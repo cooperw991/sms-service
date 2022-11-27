@@ -28,8 +28,8 @@ export class AppService {
     const aConfig = this.config.get<AliyunConfig>('aliyun');
     this.aClient = AliCloudClient.getInstance(aConfig);
 
-    // this.addFetchCronJob();
-    // this.addSendCronJob();
+    this.addFetchCronJob();
+    this.addSendCronJob();
   }
 
   private aClient: AliCloudClient;
