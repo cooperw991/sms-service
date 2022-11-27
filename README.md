@@ -1,73 +1,117 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
+# 维萨拉短信辅助工具
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 环境要求
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+### node.js
+Javascript 运行环境    
+版本要求：**>= 16.0**
 
-## Description
+#### 安装方法
+[下载](https://nodejs.org/en/download/)并运行 nodejs 对应系统版本安装包
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+```Bash
+ $ node -v # 安装完成后可运行此命令，检查版本是否正确
+ v16.14.0
+```
 
-## Installation
+### pm2
+nodejs 进程管理工具    
 
-```bash
+#### 安装方法
+```Bash
+# 使用 npm 进行安装
+$ npm install pm2@latest -g
+```
+
+## 应用启动方法
+
+### 1. 设置配置文件
+
+将 ```src/configs/config.ts.sample``` 改名为 ```config.ts```，并修改相应配置：
+```Javascript
+const config: Config = {
+  nest: {
+    port: 3001, // 应用运行时占用的端口号
+    adminNum: '' // 系统异常时，接收短信的手机号
+  },
+  aliyun: { // 阿里云相关配置，可调用短信服务的账户
+    accessKeyId: '', 
+    accessKeySecret: '',
+    endpoint: '',
+  },
+  vaisala: {
+    host: '', // 维萨拉 api 地址
+    username: '', // 登录用户名
+    password: '', // 登录密码
+  },
+  crontab: {
+    fetchEvent: '01 * * * * *', // 拉取事件的定时任务
+    sendMsg: '30 * * * * *', // 发送短信的定时任务 
+  },
+};
+```
+
+### 2. 安装 node 依赖
+
+```Bash
 $ npm install
 ```
 
-## Running the app
+### 3. 生成 prisma 客户端
 
-```bash
-# development
+```Bash
+$ npx prisma generate
+```
+
+### 4. 启动应用
+**如使用 pm2 启动则不执行此步骤**
+```Bash
 $ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
 ```
 
-## Test
+## pm2 管理启动和管理应用
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+### 1. 检查 pm2 是否安装成功
+```Bash
+$ pm2 -v
+4.5.0 # 输出版本号则表示安装正确
 ```
 
-## Support
+### 2. 添加任务
+```Bash
+$ pm2 start <configPath>
+# configPath 为 pm2 配置文件的绝对路径，文件位置为 ./pm2/service.config.js
+# 输出结果为当前 pm2 管理中的 node 进程。其中 status 为 online 表示正在运行中，stopped 表示已经退出的进程
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 3. 查看任务进程
+```Bash
+$ pm2 ls <id>
+# id 为 pm2 给进程分配的 id，可运行 pm2 ls 进行查看
+```
 
-## Stay in touch
+### 4. 重启任务进程
+```Bash
+$ pm2 reload <id>
+# id 为 pm2 给进程分配的 id，可运行 pm2 ls 进行查看
+```
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 5. 停止任务
+```Bash
+$ pm2 stop <id>
+# id 为 pm2 给进程分配的 id，可运行 pm2 ls 进行查看
+```
 
-## License
+### 6. 持久化
+```Bash
+$ pm2 save
+# 持久化是保存运行中的进程列表，在系统重启后自动运行列表中的进程
+```
 
-Nest is [MIT licensed](LICENSE).
+## 目录结构
+* ```./db: ``` sqlite 数据库
+* ```./dist:``` 应用所在路径
+* ```./logs:``` 日志
+* ```./node_modules:``` 包依赖
+* ```./src:``` 程序源文件
+* ```./prisma:``` orm
