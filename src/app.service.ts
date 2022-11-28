@@ -38,7 +38,7 @@ export class AppService {
   addFetchCronJob() {
     const cConfig = this.config.get<CrontabConfig>('crontab');
 
-    const job = new CronJob(cConfig.fetchEvent, () => {
+    const job = new CronJob(cConfig.fetchEvent || '01 * * * * *', () => {
       this.fetchEvents();
     });
 
@@ -49,7 +49,7 @@ export class AppService {
   addSendCronJob() {
     const cConfig = this.config.get<CrontabConfig>('crontab');
 
-    const job = new CronJob(cConfig.sendMsg, () => {
+    const job = new CronJob(cConfig.sendMsg || '30 * * * * *', () => {
       this.parseTask();
     });
 
@@ -121,6 +121,10 @@ export class AppService {
       });
     } catch (e) {
       Logger.error(e);
+      if (!this.config.get<NestConfig>('nest').adminNum) {
+        Logger.log('未设置管理员手机号');
+        return;
+      }
       await this.sendSMS({
         phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
         signName: '系统错误',
@@ -189,6 +193,10 @@ export class AppService {
         });
       } catch (e) {
         Logger.error(e);
+        if (!this.config.get<NestConfig>('nest').adminNum) {
+          Logger.log('未设置管理员手机号');
+          return;
+        }
         await this.sendSMS({
           phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
           signName: '系统错误',
