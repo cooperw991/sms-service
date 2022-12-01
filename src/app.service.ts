@@ -88,9 +88,6 @@ export class AppService {
   }
 
   async parseTask() {
-    this.logger.log('ahahah');
-    this.logger.error('dsdsdsds');
-    return;
     const task = await this.prisma.sMSTask.findFirst({
       where: {
         status: 0,
