@@ -12,6 +12,7 @@ const config: Config = {
     accessKeyId: '',
     accessKeySecret: '',
     endpoint: '',
+    signName: '',
   },
   vaisala: {
     host: '',

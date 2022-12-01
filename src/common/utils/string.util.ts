@@ -32,3 +32,14 @@ export const findPhoneNumbers = (str: string): string[] => {
 
   return [];
 };
+
+export const cleanSymbols = (str: string): string => {
+  return str
+    .replace(/[\r\n]/g, '')
+    .replace(/[：]/g, ':')
+    .replace(/[；]/g, ';')
+    .replace(/[。]/g, '.')
+    .replace(/[”]/g, '"')
+    .replace(/[“]/g, '"')
+    .replace(/[，]/g, ',');
+};

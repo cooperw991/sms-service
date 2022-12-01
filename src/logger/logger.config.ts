@@ -25,22 +25,20 @@ const generalTransports = [
 
 const errorTransports = [
   new winston.transports.File({
-    filename: `logs/${time}-error.log`,
-    level: 'error',
+    filename: `logs/${time}.log`,
     format: winston.format.combine(
       winston.format.timestamp(),
       winston.format.ms(),
       nestWinstonModuleUtilities.format.nestLike('MyApp', {
         prettyPrint: true,
       }),
+      winston.format.printf((info) => {
+        return `${info.level}: ${[info.timestamp]}: ${info.message}`;
+      }),
     ),
   }),
 ];
 
 export const loggerConfig = {
-  level: 'info',
-  transports:
-    process.env.NODE_ENV === 'production'
-      ? [...generalTransports, ...errorTransports]
-      : generalTransports,
+  transports: [...generalTransports, ...errorTransports],
 };

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, LoggerService } from '@nestjs/common';
 import { PrismaService } from 'nestjs-prisma';
 import { EventModel } from './common/helpers/vaisala.helper';
 import { ConfigService } from '@nestjs/config';
@@ -21,14 +21,16 @@ export class AppService {
     private prisma: PrismaService,
     private config: ConfigService,
     private scheduler: SchedulerRegistry,
+    @Inject(Logger) private readonly logger: LoggerService,
   ) {
+    process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
     const vConfig = this.config.get<VaisalaConfig>('vaisala');
     this.vClient = VaisalaClient.getInstance(vConfig);
 
     const aConfig = this.config.get<AliyunConfig>('aliyun');
     this.aClient = AliCloudClient.getInstance(aConfig);
 
-    this.addFetchCronJob();
+    // this.addFetchCronJob();
     this.addSendCronJob();
   }
 
@@ -49,7 +51,7 @@ export class AppService {
   addSendCronJob() {
     const cConfig = this.config.get<CrontabConfig>('crontab');
 
-    const job = new CronJob(cConfig.sendMsg || '30 * * * * *', () => {
+    const job = new CronJob(cConfig.sendMsg || '*/5 * * * * *', () => {
       this.parseTask();
     });
 
@@ -98,17 +100,51 @@ export class AppService {
       return;
     }
 
-    const { eventMsg, eventTargets } = task;
+    const { eventMsg, eventTargets, eventTime } = task;
 
-    // TODO：设置 template
-    await this.sendSMS({
-      phoneNumbers: eventTargets,
-      signName: eventMsg,
-      templateCode: '',
-      templateParam: '',
-      smsUpExtendCode: '',
-      outId: '',
-    });
+    const template = this.vClient.findTemplate(eventMsg);
+    const params = this.vClient.generateSMSParams(eventMsg, template);
+
+    if (!params) {
+      if (!this.config.get<NestConfig>('nest').adminNum) {
+        this.logger.log('未设置管理员手机号, 无法通知管理员');
+        this.logger.log('有未知事件发生：', eventMsg);
+        return;
+      }
+      await this.sendSMS({
+        phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
+        signName: this.config.get<AliyunConfig>('aliyun').signName,
+        templateCode: 'SMS_260975398',
+        templateParam: '',
+        smsUpExtendCode: '',
+        outId: '',
+      });
+      return;
+    }
+
+    if (params.length) {
+      for (const paramItem of params) {
+        await this.sendSMS({
+          phoneNumbers: eventTargets,
+          signName: this.config.get<AliyunConfig>('aliyun').signName,
+          templateCode: template.templateCode,
+          templateParam: paramItem,
+          smsUpExtendCode: '',
+          outId: '',
+        });
+      }
+    } else {
+      await this.sendSMS({
+        phoneNumbers: eventTargets,
+        signName: this.config.get<AliyunConfig>('aliyun').signName,
+        templateCode: template.templateCode,
+        templateParam: params,
+        smsUpExtendCode: '',
+        outId: '',
+      });
+    }
+
+    Logger.log('短信内容：' + eventMsg + '已发出');
 
     try {
       await this.prisma.sMSTask.update({
@@ -122,13 +158,13 @@ export class AppService {
     } catch (e) {
       Logger.error(e);
       if (!this.config.get<NestConfig>('nest').adminNum) {
-        Logger.log('未设置管理员手机号');
+        this.logger.log('未设置管理员手机号, 无法通知管理员');
         return;
       }
       await this.sendSMS({
         phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
-        signName: '系统错误',
-        templateCode: '',
+        signName: this.config.get<AliyunConfig>('aliyun').signName,
+        templateCode: 'SMS_260975398',
         templateParam: '',
         smsUpExtendCode: '',
         outId: '',
@@ -194,7 +230,7 @@ export class AppService {
       } catch (e) {
         Logger.error(e);
         if (!this.config.get<NestConfig>('nest').adminNum) {
-          Logger.log('未设置管理员手机号');
+          this.logger.log('未设置管理员手机号, 无法通知管理员');
           return;
         }
         await this.sendSMS({

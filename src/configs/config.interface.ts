@@ -14,6 +14,7 @@ export interface AliyunConfig {
   accessKeyId: string;
   accessKeySecret: string;
   endpoint: string;
+  signName: string;
 }
 
 export interface VaisalaConfig {

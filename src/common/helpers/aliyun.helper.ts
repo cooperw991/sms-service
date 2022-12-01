@@ -12,7 +12,7 @@ export interface SMSParams {
   // 短信模板 code
   templateCode: string;
   // 短信模板变量对应的实际值
-  templateParam?: string;
+  templateParam?: any;
   // 上行短信扩展码
   smsUpExtendCode?: string;
   // 外部流水扩展字段
@@ -54,10 +54,28 @@ export class AliCloudClient {
    * @throws Exception
    */
   public async sendSmsReq(params: SMSParams): Promise<boolean> {
+    const { templateParam } = params;
+
+    const realTemplateParam = {};
+
+    for (const key in templateParam) {
+      realTemplateParam[key] = templateParam[key].slice(0, 35);
+    }
+    params.templateParam = JSON.stringify(realTemplateParam);
+
+    // 测试用
+    params.phoneNumbers = '15588600150';
     const sendSmsRequest = new $Dysmsapi20170525.SendSmsRequest(params);
+
     const runtime = new $Util.RuntimeOptions({});
     try {
-      await this.client.sendSmsWithOptions(sendSmsRequest, runtime);
+      const res = await this.client.sendSmsWithOptions(sendSmsRequest, runtime);
+
+      if (res?.body?.message !== 'OK') {
+        Logger.error(
+          `${res.body.message}, params: ${JSON.stringify(realTemplateParam)}`,
+        );
+      }
     } catch (error) {
       // 如有需要，请打印 error
       Logger.error(error.message);

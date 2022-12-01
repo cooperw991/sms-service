@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Logger, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from 'nestjs-prisma';
 import { AppService } from './app.service';
@@ -18,6 +18,6 @@ import config from '@/configs/config';
     }),
   ],
   controllers: [],
-  providers: [AppService],
+  providers: [AppService, Logger],
 })
 export class AppModule {}
