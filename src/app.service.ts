@@ -38,6 +38,7 @@ export class AppService {
   private vClient: VaisalaClient;
 
   addFetchCronJob() {
+    this.logger.error('开始获取日志');
     const cConfig = this.config.get<CrontabConfig>('crontab');
 
     const job = new CronJob(cConfig.fetchEvent || '01 * * * * *', () => {
@@ -87,6 +88,9 @@ export class AppService {
   }
 
   async parseTask() {
+    this.logger.log('ahahah');
+    this.logger.error('dsdsdsds');
+    return;
     const task = await this.prisma.sMSTask.findFirst({
       where: {
         status: 0,
@@ -144,7 +148,7 @@ export class AppService {
       });
     }
 
-    Logger.log('短信内容：' + eventMsg + '已发出');
+    this.logger.log('短信内容：' + eventMsg + '已发出');
 
     try {
       await this.prisma.sMSTask.update({
@@ -156,7 +160,7 @@ export class AppService {
         },
       });
     } catch (e) {
-      Logger.error(e);
+      this.logger.error(e);
       if (!this.config.get<NestConfig>('nest').adminNum) {
         this.logger.log('未设置管理员手机号, 无法通知管理员');
         return;
@@ -228,7 +232,7 @@ export class AppService {
           },
         });
       } catch (e) {
-        Logger.error(e);
+        this.logger.error(e);
         if (!this.config.get<NestConfig>('nest').adminNum) {
           this.logger.log('未设置管理员手机号, 无法通知管理员');
           return;
@@ -249,7 +253,7 @@ export class AppService {
     try {
       await this.aClient.sendSmsReq(sms);
     } catch (e) {
-      Logger.error(e);
+      this.logger.error(e);
       throw new Error(`发送短信失败：${e}`);
     }
   }

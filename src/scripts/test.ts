@@ -28,11 +28,7 @@ import config from '../configs/config';
 
   const template = client.findTemplate(successMsg);
   console.log(template);
-  const params = client.generateSMSParams(
-    successMsg,
-    '2022-12-31 13:32:42+08:00',
-    template,
-  );
+  const params = client.generateSMSParams(successMsg, template);
 
   if (params.length) {
     for (const item of params) {
