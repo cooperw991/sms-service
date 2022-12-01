@@ -108,10 +108,10 @@ export class AppService {
     if (!params) {
       if (!this.config.get<NestConfig>('nest').adminNum) {
         this.logger.log('未设置管理员手机号, 无法通知管理员');
-        this.logger.log('有未知事件发生：', eventMsg);
+        this.logger.error('有未知事件发生：', eventMsg);
         return;
       }
-      this.logger.log('有未知事件：', eventMsg);
+      this.logger.error('有未知事件：', eventMsg);
       await this.sendSMS({
         phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
         signName: this.config.get<AliyunConfig>('aliyun').signName,
