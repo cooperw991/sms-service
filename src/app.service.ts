@@ -120,10 +120,7 @@ export class AppService {
         smsUpExtendCode: '',
         outId: '',
       });
-      return;
-    }
-
-    if (params.length) {
+    } else if (params.length) {
       for (const paramItem of params) {
         await this.sendSMS({
           phoneNumbers: eventTargets,
