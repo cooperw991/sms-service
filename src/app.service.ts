@@ -214,7 +214,7 @@ export class AppService {
   async insertTasks(events: EventModel[]) {
     for (const _event of events) {
       const { eventMsg, eventTargets } =
-        _event.msg.indexOf('failed to send sms') !== -1
+        _event.msg.indexOf('failed to send SMS') !== -1
           ? this.parseFailEvent(_event)
           : this.parseSuccessEvent(_event);
 
