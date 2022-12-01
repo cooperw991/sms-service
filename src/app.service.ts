@@ -38,7 +38,6 @@ export class AppService {
   private vClient: VaisalaClient;
 
   addFetchCronJob() {
-    this.logger.error('开始获取日志');
     const cConfig = this.config.get<CrontabConfig>('crontab');
 
     const job = new CronJob(cConfig.fetchEvent || '01 * * * * *', () => {
@@ -112,6 +111,7 @@ export class AppService {
         this.logger.log('有未知事件发生：', eventMsg);
         return;
       }
+      this.logger.log('有未知事件：', eventMsg);
       await this.sendSMS({
         phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
         signName: this.config.get<AliyunConfig>('aliyun').signName,
