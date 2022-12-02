@@ -63,8 +63,6 @@ export class AliCloudClient {
     }
     params.templateParam = JSON.stringify(realTemplateParam);
 
-    // 测试用
-    params.phoneNumbers = '15588600150';
     const sendSmsRequest = new $Dysmsapi20170525.SendSmsRequest(params);
 
     const runtime = new $Util.RuntimeOptions({});
