@@ -13,7 +13,7 @@ winston.addColors({
 const generalTransports = [
   new winston.transports.Console({
     format: winston.format.combine(
-      winston.format.timestamp(),
+      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
       winston.format.ms(),
       nestWinstonModuleUtilities.format.nestLike('MyApp', {
         prettyPrint: true,
@@ -24,7 +24,7 @@ const generalTransports = [
   new winston.transports.File({
     filename: `logs/combine-${time}.log`,
     format: winston.format.combine(
-      winston.format.timestamp(),
+      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
       winston.format.ms(),
       nestWinstonModuleUtilities.format.nestLike('MyApp', {
         prettyPrint: true,
@@ -38,7 +38,7 @@ const generalTransports = [
     filename: `logs/error-${time}.log`,
     level: 'error',
     format: winston.format.combine(
-      winston.format.timestamp(),
+      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
       winston.format.ms(),
       nestWinstonModuleUtilities.format.nestLike('MyApp', {
         prettyPrint: true,

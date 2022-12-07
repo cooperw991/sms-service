@@ -25,10 +25,10 @@ export class AppService {
   ) {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
     const vConfig = this.config.get<VaisalaConfig>('vaisala');
-    this.vClient = VaisalaClient.getInstance(vConfig);
+    this.vClient = VaisalaClient.getInstance(vConfig, this.logger);
 
     const aConfig = this.config.get<AliyunConfig>('aliyun');
-    this.aClient = AliCloudClient.getInstance(aConfig);
+    this.aClient = AliCloudClient.getInstance(aConfig, this.logger);
 
     this.addFetchCronJob();
     this.addSendCronJob();
@@ -142,7 +142,9 @@ export class AppService {
       });
     }
 
-    this.logger.log('短信内容：' + eventMsg + '已发出');
+    this.logger.log(
+      '短信内容：' + eventMsg + '已发出。接收人：' + eventTargets,
+    );
 
     try {
       await this.prisma.sMSTask.update({

@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { LoggerService } from '@nestjs/common';
 import { cleanSymbols } from '../utils/string.util';
 
 export interface VaisalaConfig {
@@ -128,14 +128,16 @@ export class VaisalaClient {
    * @return VaisalaClient
    * @throws Exception
    */
-  constructor(config: VaisalaConfig) {
+  constructor(config: VaisalaConfig, logger: LoggerService) {
     this.config = config;
+    this.logger = logger;
   }
 
   private static instance: VaisalaClient;
   private config: VaisalaConfig;
   private fetch: any;
   private cookieJar: any;
+  private logger: LoggerService;
 
   /**
    * 初始化单例
@@ -143,9 +145,12 @@ export class VaisalaClient {
    * @return AliCloudClient
    * @throws Exception
    */
-  public static getInstance(config: VaisalaConfig): VaisalaClient {
+  public static getInstance(
+    config: VaisalaConfig,
+    logger: LoggerService,
+  ): VaisalaClient {
     if (!this.instance) {
-      this.instance = new VaisalaClient(config);
+      this.instance = new VaisalaClient(config, logger);
     }
     return this.instance;
   }
@@ -176,7 +181,7 @@ export class VaisalaClient {
       `${host}/__login__?username=${username}&password=${password}`,
     );
     if (!res.ok) {
-      Logger.error(`login 请求失败！Http code: ${res.status}`);
+      this.logger.error(`[vaisala]: login 请求失败！Http code: ${res.status}`);
       throw new Error(`login 请求失败！Http code: ${res.status}`);
     }
 
@@ -197,7 +202,9 @@ export class VaisalaClient {
       `${host}/json/api-events_query?categ_filters=${categ_filters}&text_search=${text_search}&date_from=${date_from}`,
     );
     if (!res.ok) {
-      Logger.error(`queryEvents 请求失败！Http code: ${res.status}`);
+      this.logger.error(
+        `[vaisala]: queryEvents 请求失败！Http code: ${res.status}`,
+      );
     }
 
     return true;
@@ -231,7 +238,9 @@ export class VaisalaClient {
       `${host}/json/api-events?sort=num&dir=desc`,
     );
     if (!res.ok) {
-      Logger.error(`fetchEvents 请求失败！Http code: ${res.status}`);
+      this.logger.error(
+        `[vaisala]: fetchEvents 请求失败！Http code: ${res.status}`,
+      );
     }
 
     const resText = await res.text();
@@ -241,7 +250,7 @@ export class VaisalaClient {
     }
 
     if (resText.indexOf('success') === -1) {
-      Logger.error(resText);
+      this.logger.error('[vaisala]: ' + resText);
       throw new Error(resText);
     }
 
