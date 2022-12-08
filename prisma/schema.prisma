@@ -17,7 +17,7 @@ model SMSTask {
   eventTime       String
   eventTargets    String
   eventType       Int  @default(1) // 0: 发送失败 1: 一般发送成功
-  status          Int  @default(0)
+  status          Int  @default(0) // 0: 未发送 1: 发送成功 2: 发送失败
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now())
 

@@ -74,12 +74,7 @@ const TEMPLATES = [
     templateCode: 'SMS_261095333',
   },
   {
-    testWords: [
-      'viewLinc - 到设备',
-      '的通信已恢复设备序列号/位置/主机:',
-      '阈值条件:',
-      '已恢复正常:',
-    ],
+    testWords: ['viewLinc - 到设备', '的通信已恢复设备序列号/位置/主机:'],
     templateName: '设备通信已恢复',
     templateCode: 'SMS_261460032',
   },
@@ -115,9 +110,19 @@ const TEMPLATES = [
     templateCode: 'SMS_261115311',
   },
   {
-    testWords: [],
-    templateName: '通用系统警报模板',
-    templateCode: 'SMS_260975398',
+    testWords: ['重复：设备', '上的配置警报'],
+    templateName: '设备配置重复失败',
+    templateCode: 'SMS_263180201',
+  },
+  {
+    testWords: ['设备', '上的配置警报'],
+    templateName: '设备配置失败',
+    templateCode: 'SMS_263075220',
+  },
+  {
+    testWords: ['已在', '上恢复配置'],
+    templateName: '设备配置已恢复',
+    templateCode: 'SMS_263075221',
   },
 ];
 
@@ -201,10 +206,19 @@ export class VaisalaClient {
       this.cookieJar,
       `${host}/json/api-events_query?categ_filters=${categ_filters}&text_search=${text_search}&date_from=${date_from}`,
     );
+
     if (!res.ok) {
       this.logger.error(
         `[vaisala]: queryEvents 请求失败！Http code: ${res.status}`,
       );
+      return false;
+    }
+
+    const resText = await res.text();
+
+    if (resText === UNAUTH_ERROR_STR || resText === NOT_FOUND_STR) {
+      this.cookieJar = null;
+      return false;
     }
 
     return true;
@@ -223,9 +237,15 @@ export class VaisalaClient {
   ): Promise<EventModel[]> {
     const { host } = this.config;
 
-    if (!polling) {
+    if (!this.cookieJar) {
       await this.login();
-      await this.queryEvents(filter);
+    }
+
+    if (!polling) {
+      const queryRes = await this.queryEvents(filter);
+      if (!queryRes) {
+        return [];
+      }
       await new Promise((resolve, rejects) => {
         setTimeout(() => {
           resolve(true);
@@ -241,12 +261,14 @@ export class VaisalaClient {
       this.logger.error(
         `[vaisala]: fetchEvents 请求失败！Http code: ${res.status}`,
       );
+      return [];
     }
 
     const resText = await res.text();
 
     if (resText === UNAUTH_ERROR_STR || resText === NOT_FOUND_STR) {
-      return this.fetchEvents(filter);
+      this.cookieJar = null;
+      return [];
     }
 
     if (resText.indexOf('success') === -1) {
@@ -275,6 +297,7 @@ export class VaisalaClient {
 
   public findTemplate(msg: string): Partial<SMSTemplate> {
     const pureText = cleanSymbols(msg);
+    console.log(pureText);
 
     for (const template of TEMPLATES) {
       const { testWords } = template;
@@ -333,6 +356,12 @@ export class VaisalaClient {
         return this.generateTempl_7(valueArr);
       case 'SMS_261115311':
         return this.generateTempl_8(valueArr);
+      case 'SMS_263075220':
+        return this.generateTempl_9(valueArr);
+      case 'SMS_263075221':
+        return this.generateTempl_10(valueArr);
+      case 'SMS_263180201':
+        return this.generateTempl_11(valueArr);
       default:
         return null;
     }
@@ -363,15 +392,16 @@ export class VaisalaClient {
 
     return summary.map((item) => {
       const parts = item.split('/');
+      console.log(parts);
       return {
         DeviceDescription: device.replace(/"/g, '').replace(/\s+/g, ''),
         AlarmTimestamp: time,
         DeviceSerialNumber: description[0],
         DeviceAddress: description[1],
         DeviceHostName: description[2],
-        LocationSummary: `${parts[1]}/${
-          parts[2].split('(')[0]
-        }/${parts[3].replace(' ', '')}`,
+        LocationSummary: `${parts[1]}/${parts[2].split('(')[0]}/${parts[3]
+          .split(' ')[0]
+          .trim()}`,
         AlarmMessage: ' ',
       };
     });
@@ -486,6 +516,24 @@ export class VaisalaClient {
       DeviceNextCalDate: valueArr[3].split('+')[0].trim(),
       DeviceAddress: address.join('/'),
       DeviceHostName: hostName[0].trim(),
+    };
+  }
+
+  private generateTempl_9(valueArr: string[]): any {
+    return {
+      DeviceDescription: valueArr[1].trim(),
+    };
+  }
+
+  private generateTempl_10(valueArr: string[]): any {
+    return {
+      DeviceDescription: valueArr[1].trim(),
+    };
+  }
+
+  private generateTempl_11(valueArr: string[]): any {
+    return {
+      DeviceDescription: valueArr[1].trim(),
     };
   }
 }

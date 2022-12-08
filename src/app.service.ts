@@ -100,7 +100,7 @@ export class AppService {
       return;
     }
 
-    const { eventMsg, eventTargets, eventTime } = task;
+    const { eventMsg, eventTargets, eventTime, eventNum } = task;
 
     const template = this.vClient.findTemplate(eventMsg);
     const params = this.vClient.generateSMSParams(eventMsg, template);
@@ -108,19 +108,29 @@ export class AppService {
     if (!params) {
       if (!this.config.get<NestConfig>('nest').adminNum) {
         this.logger.log('未设置管理员手机号, 无法通知管理员');
-        this.logger.error('有未知事件发生：', eventMsg);
-        return;
+      } else {
+        await this.sendSMS({
+          phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
+          signName: this.config.get<AliyunConfig>('aliyun').signName,
+          templateCode: 'SMS_263240195',
+          templateParam: {
+            eventid: eventNum,
+          },
+          smsUpExtendCode: '',
+          outId: '',
+        });
       }
-      this.logger.error('有未知事件：', eventMsg);
-      await this.sendSMS({
-        phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
-        signName: this.config.get<AliyunConfig>('aliyun').signName,
-        templateCode: 'SMS_260975398',
-        templateParam: '',
-        smsUpExtendCode: '',
-        outId: '',
-      });
-    } else if (params.length) {
+
+      this.logger.error(
+        `有未知事件发生：[eventNum]: ${eventNum}, [eventTime]: ${dayjs
+          .unix(+eventTime)
+          .format('YYYY-MM-DD HH:mm:ss')}, [content]: ${eventMsg}`,
+      );
+
+      return this.markTaskFail(task.id);
+    }
+
+    if (params.length) {
       for (const paramItem of params) {
         await this.sendSMS({
           phoneNumbers: eventTargets,
@@ -143,33 +153,10 @@ export class AppService {
     }
 
     this.logger.log(
-      '短信内容：' + eventMsg + '已发出。接收人：' + eventTargets,
+      `[eventNum: ${eventNum}]短信内容：'${eventMsg}'已发出。接收人：${eventTargets}`,
     );
 
-    try {
-      await this.prisma.sMSTask.update({
-        where: {
-          id: task.id,
-        },
-        data: {
-          status: 1,
-        },
-      });
-    } catch (e) {
-      this.logger.error(e);
-      if (!this.config.get<NestConfig>('nest').adminNum) {
-        this.logger.log('未设置管理员手机号, 无法通知管理员');
-        return;
-      }
-      await this.sendSMS({
-        phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
-        signName: this.config.get<AliyunConfig>('aliyun').signName,
-        templateCode: 'SMS_260975398',
-        templateParam: '',
-        smsUpExtendCode: '',
-        outId: '',
-      });
-    }
+    return this.markTaskSuccess(task.id);
   }
 
   parseSuccessEvent(event: EventModel): {
@@ -259,5 +246,59 @@ export class AppService {
       .replace('SMS text: \\', '')
       .replace('\\" sent.', '')
       .replace('\\" One or more recipients were refused.', '');
+  }
+
+  async markTaskSuccess(taskId: number) {
+    try {
+      await this.prisma.sMSTask.update({
+        where: {
+          id: taskId,
+        },
+        data: {
+          status: 1,
+        },
+      });
+    } catch (e) {
+      this.logger.error(e);
+      // if (!this.config.get<NestConfig>('nest').adminNum) {
+      //   this.logger.log('未设置管理员手机号, 无法通知管理员');
+      //   return;
+      // }
+      // await this.sendSMS({
+      //   phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
+      //   signName: this.config.get<AliyunConfig>('aliyun').signName,
+      //   templateCode: 'SMS_260975398',
+      //   templateParam: '',
+      //   smsUpExtendCode: '',
+      //   outId: '',
+      // });
+    }
+  }
+
+  async markTaskFail(taskId: number) {
+    try {
+      await this.prisma.sMSTask.update({
+        where: {
+          id: taskId,
+        },
+        data: {
+          status: 2,
+        },
+      });
+    } catch (e) {
+      this.logger.error(e);
+      // if (!this.config.get<NestConfig>('nest').adminNum) {
+      //   this.logger.log('未设置管理员手机号, 无法通知管理员');
+      //   return;
+      // }
+      // await this.sendSMS({
+      //   phoneNumbers: this.config.get<NestConfig>('nest').adminNum,
+      //   signName: this.config.get<AliyunConfig>('aliyun').signName,
+      //   templateCode: 'SMS_260975398',
+      //   templateParam: '',
+      //   smsUpExtendCode: '',
+      //   outId: '',
+      // });
+    }
   }
 }
