@@ -71,7 +71,7 @@ export class AppService {
     const lastNum = lastTask ? +lastTask.eventNum : 0;
     const lastTime = lastTask
       ? lastTask.eventTime
-      : dayjs().subtract(5, 'h').unix();
+      : dayjs().subtract(5, 'm').unix();
 
     const events = await this.vClient.fetchEvents({
       categ_filters: 'system',
