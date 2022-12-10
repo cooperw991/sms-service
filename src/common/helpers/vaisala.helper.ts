@@ -217,6 +217,7 @@ export class VaisalaClient {
     const resText = await res.text();
 
     if (resText === UNAUTH_ERROR_STR || resText === NOT_FOUND_STR) {
+      this.logger.log(`登录失效1: ${resText}`);
       this.cookieJar = null;
       return false;
     }
@@ -267,6 +268,7 @@ export class VaisalaClient {
     const resText = await res.text();
 
     if (resText === UNAUTH_ERROR_STR || resText === NOT_FOUND_STR) {
+      this.logger.log(`登录失效2: ${resText}`);
       this.cookieJar = null;
       return [];
     }
