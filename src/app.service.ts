@@ -24,6 +24,7 @@ export class AppService {
     @Inject(Logger) private readonly logger: LoggerService,
   ) {
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+    this.sending = false;
     const vConfig = this.config.get<VaisalaConfig>('vaisala');
     this.vClient = VaisalaClient.getInstance(vConfig, this.logger);
 
@@ -36,6 +37,7 @@ export class AppService {
 
   private aClient: AliCloudClient;
   private vClient: VaisalaClient;
+  private sending: boolean;
 
   addFetchCronJob() {
     const cConfig = this.config.get<CrontabConfig>('crontab');
@@ -69,9 +71,11 @@ export class AppService {
     });
 
     const lastNum = lastTask ? +lastTask.eventNum : 0;
-    const lastTime = lastTask
-      ? lastTask.eventTime
-      : dayjs().subtract(5, 'm').unix();
+    // const lastTime = lastTask
+    //   ? lastTask.eventTime
+    //   : dayjs().subtract(5, 'm').unix();
+
+    const lastTime = dayjs().subtract(5, 'm').unix();
 
     const events = await this.vClient.fetchEvents({
       categ_filters: 'system',
@@ -87,6 +91,11 @@ export class AppService {
   }
 
   async parseTask() {
+    if (this.sending) {
+      return;
+    }
+    this.sending = true;
+
     const task = await this.prisma.sMSTask.findFirst({
       where: {
         status: 0,
@@ -97,6 +106,7 @@ export class AppService {
     });
 
     if (!task) {
+      this.sending = false;
       return;
     }
 
@@ -127,18 +137,25 @@ export class AppService {
           .format('YYYY-MM-DD HH:mm:ss')}, [content]: ${eventMsg}`,
       );
 
-      return this.markTaskFail(task.id);
+      await this.markTaskFail(task.id);
+      this.sending = false;
+      return;
     }
 
     if (params.length) {
       for (const paramItem of params) {
-        await this.sendSMS({
-          phoneNumbers: eventTargets,
-          signName: this.config.get<AliyunConfig>('aliyun').signName,
-          templateCode: template.templateCode,
-          templateParam: paramItem,
-          smsUpExtendCode: '',
-          outId: '',
+        await new Promise(async (resolve) => {
+          await this.sendSMS({
+            phoneNumbers: eventTargets,
+            signName: this.config.get<AliyunConfig>('aliyun').signName,
+            templateCode: template.templateCode,
+            templateParam: paramItem,
+            smsUpExtendCode: '',
+            outId: '',
+          });
+          setTimeout(() => {
+            resolve(true);
+          }, 3000);
         });
       }
     } else {
@@ -156,7 +173,9 @@ export class AppService {
       `[eventNum: ${eventNum}]短信内容：'${eventMsg}'已发出。接收人：${eventTargets}`,
     );
 
-    return this.markTaskSuccess(task.id);
+    await this.markTaskSuccess(task.id);
+    this.sending = false;
+    return;
   }
 
   parseSuccessEvent(event: EventModel): {
