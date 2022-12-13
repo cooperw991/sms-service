@@ -167,11 +167,10 @@ export class VaisalaClient {
    * @throws Exception
    */
   public async initFetch() {
-    const { CookieJar, fetch } = (await eval(
+    const { fetch } = (await eval(
       `import('node-fetch-cookies')`,
     )) as typeof import('node-fetch-cookies');
     this.fetch = fetch;
-    this.cookieJar = new CookieJar();
   }
 
   /**
@@ -181,6 +180,11 @@ export class VaisalaClient {
    */
   public async login(): Promise<boolean> {
     const { host, username, password } = this.config;
+    const { CookieJar } = (await eval(
+      `import('node-fetch-cookies')`,
+    )) as typeof import('node-fetch-cookies');
+
+    this.cookieJar = new CookieJar();
     const res = await this.fetch(
       this.cookieJar,
       `${host}/__login__?username=${username}&password=${password}`,
