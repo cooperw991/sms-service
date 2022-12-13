@@ -211,7 +211,6 @@ export class VaisalaClient {
       this.logger.error(
         `[vaisala]: queryEvents 请求失败！Http code: ${res.status}`,
       );
-      return false;
     }
 
     const resText = await res.text();
@@ -261,7 +260,6 @@ export class VaisalaClient {
       this.logger.error(
         `[vaisala]: fetchEvents 请求失败！Http code: ${res.status}`,
       );
-      return [];
     }
 
     const resText = await res.text();
