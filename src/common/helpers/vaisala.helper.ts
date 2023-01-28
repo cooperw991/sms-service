@@ -331,6 +331,11 @@ export class VaisalaClient {
 
   public generateSMSParams(msg: string, template: Partial<SMSTemplate>): any {
     const { testWords } = template;
+
+    if (!testWords) {
+      return null;
+    }
+
     const pureText = cleanSymbols(msg);
 
     const valueStr = testWords.reduce((prev, curr) => {
