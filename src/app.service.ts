@@ -64,11 +64,20 @@ export class AppService {
   async fetchEvents() {
     await this.vClient.initFetch();
 
-    const lastTask = await this.prisma.sMSTask.findFirst({
+    const lastTasks = await this.prisma.sMSTask.findMany({
       orderBy: {
-        eventNum: 'desc',
+        id: 'desc',
       },
+      take: 50,
     });
+
+    let lastTask = lastTasks[0];
+
+    for (const task of lastTasks) {
+      if (+task.eventNum > +lastTask.eventNum) {
+        lastTask = task;
+      }
+    }
 
     const lastNum = lastTask ? +lastTask.eventNum : 0;
     // const lastTime = lastTask
@@ -218,6 +227,18 @@ export class AppService {
 
   async insertTasks(events: EventModel[]) {
     for (const _event of events) {
+      const { num } = _event;
+
+      const exist = await this.prisma.sMSTask.findFirst({
+        where: {
+          eventNum: num + '',
+        },
+      });
+
+      if (exist) {
+        continue;
+      }
+
       const { eventMsg, eventTargets } =
         _event.msg.indexOf('failed to send SMS') !== -1
           ? this.parseFailEvent(_event)
